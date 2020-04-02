@@ -43,7 +43,7 @@ internal object NavigationController {
 
     private const val THRIO_STACK_INDEX_AUTO = 0
 
-    private const val KEY_THRIO_PUSH_DATA = "KEY_THRIO_PUSH_ANIM"
+    private const val KEY_THRIO_PUSH_DATA = "KEY_THRIO_PUSH_DATA"
 
     var action = RouteAction.NONE
 
@@ -74,15 +74,20 @@ internal object NavigationController {
             val record = PageRouteStack.last()
             record.resultParams = params
             record.animated = animated
-            record.poppedResult?.get()?.let { it(record.resultParams) }
-            PageRouteStack.pop(record)
-            onPop(record) { check(it) { "flutter must not pop fail" } }
-            val intent = Intent(context, record.clazz)
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            context.startActivity(intent)
-            action = RouteAction.NONE
-            result(true)
+            onPop(record) {
+                action = RouteAction.NONE
+                result(it)
+                if (!it) {
+                    // Flutter WillPopScope is false
+                    return@onPop
+                }
+                record.poppedResult?.get()?.let { it(record.resultParams) }
+                PageRouteStack.pop(record)
+                val intent = Intent(context, record.clazz)
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                context.startActivity(intent)
+            }
         }
 
         private fun onPop(record: PageRoute, result: Result) {
@@ -120,7 +125,6 @@ internal object NavigationController {
             val builder = PageBuilders.getPageBuilder(url)
             val intent = builder.buildIntent(context).apply {
                 setClass(context, builder.getActivityClz(url))
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 if (!animated) {
                     addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 }
@@ -180,8 +184,10 @@ internal object NavigationController {
                 if (!it) {
                     PageRouteStack.pop(record)
                     activity.finish()
+                    result(null)
+                } else {
+                    result(record.index)
                 }
-                result(record.index)
             }
             action = RouteAction.NONE
             this.result = null
