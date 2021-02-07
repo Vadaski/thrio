@@ -28,12 +28,12 @@ class _Page4State extends State<Page4> {
       appBar: AppBar(
         brightness: Brightness.light,
         backgroundColor: Colors.white,
-        textTheme: TextTheme(title: TextStyle(color: Colors.black)),
-        title: const Text('thrio_example'),
-        leading: IconButton(
+        title:
+            const Text('thrio_example', style: TextStyle(color: Colors.black)),
+        leading: const IconButton(
           color: Colors.black,
           tooltip: 'back',
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(Icons.arrow_back_ios),
           onPressed: ThrioNavigator.pop,
         ),
       ),
@@ -48,12 +48,12 @@ class _Page4State extends State<Page4> {
                   alignment: AlignmentDirectional.center,
                   child: Text(
                     'flutter4: index is ${widget.index}',
-                    style: TextStyle(fontSize: 28, color: Colors.blue),
+                    style: const TextStyle(fontSize: 28, color: Colors.blue),
                   ),
                 ),
                 InkWell(
                   onTap: () => ThrioNavigator.push(
-                    url: 'biz1/flutter1',
+                    url: '/biz1/flutter1',
                     params: {
                       '1': {'2': '3'}
                     },
@@ -62,18 +62,18 @@ class _Page4State extends State<Page4> {
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.yellow,
-                      child: Text(
+                      child: const Text(
                         'push flutter1',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
                 ),
                 InkWell(
-                  onTap: () => ThrioNavigator.remove(url: 'biz1/flutter3'),
+                  onTap: () => ThrioNavigator.remove(url: '/biz1/flutter3'),
                   child: Container(
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.yellow,
-                      child: Text(
+                      child: const Text(
                         'remove flutter3',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
@@ -84,28 +84,28 @@ class _Page4State extends State<Page4> {
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.yellow,
-                      child: Text(
+                      child: const Text(
                         'pop',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
                 ),
                 InkWell(
                   onTap: () => ThrioNavigator.popTo(
-                    url: 'biz2/flutter2',
-                    animated: false,
+                    url: '/biz2/flutter2',
+                    animated: true,
                   ),
                   child: Container(
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.yellow,
-                      child: Text(
+                      child: const Text(
                         'popTo flutter2',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
                 ),
                 InkWell(
                   onTap: () => ThrioNavigator.push(
-                    url: 'native1',
+                    url: '/biz1/native1',
                     params: {
                       '1': {'2': '3'}
                     },
@@ -114,19 +114,38 @@ class _Page4State extends State<Page4> {
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.grey,
-                      child: Text(
+                      child: const Text(
                         'push native1',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
                 ),
                 InkWell(
-                  onTap: () => ThrioNavigator.remove(url: 'native1'),
+                  onTap: () => ThrioNavigator.remove(url: '/biz1/native1'),
                   child: Container(
                       padding: const EdgeInsets.all(8),
                       margin: const EdgeInsets.all(8),
                       color: Colors.grey,
-                      child: Text(
+                      child: const Text(
                         'pop native1',
+                        style: TextStyle(fontSize: 22, color: Colors.black),
+                      )),
+                ),
+                InkWell(
+                  onTap: () async {
+                    if (!await ThrioNavigator.notify(
+                      url: '/biz1/flutter1',
+                      name: 'page1Notify',
+                    )) {
+                      await ThrioNavigator.push(
+                          url: '/biz1/flutter1', params: {'page1Notify': {}});
+                    }
+                  },
+                  child: Container(
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.all(8),
+                      color: Colors.grey,
+                      child: const Text(
+                        'open if needed and notify',
                         style: TextStyle(fontSize: 22, color: Colors.black),
                       )),
                 ),

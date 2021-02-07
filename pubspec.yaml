@@ -1,10 +1,11 @@
 name: thrio
-description: A flutter plugin which enables hybrid integration of flutter for existing ios or android apps.
-version: 0.1.0
-homepage: https://github.com/hellobike/thrio
+description: Thrio makes it easy and fast to add flutter to existing mobile applications, and provide a simple and consistent navigator APIs.
+version: 1.0.0
+homepage: https://github.com/hellobike/flutter_thrio
 
 environment:
   sdk: '>=2.6.0 <3.0.0'
+  flutter: '>=1.12.0 <2.0.0'
 
 dependencies:
   flutter:
@@ -25,8 +26,12 @@ flutter:
   # be modified. They are used by the tooling to maintain consistency when
   # adding or updating assets for this project.
   plugin:
-    androidPackage: com.hellobike.flutter.thrio
-    pluginClass: ThrioPlugin
+    platforms:
+      android:
+        package: com.hellobike.flutter.thrio
+        pluginClass: ThrioPlugin
+      ios:
+        pluginClass: ThrioPlugin
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg

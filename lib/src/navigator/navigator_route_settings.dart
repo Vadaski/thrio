@@ -33,13 +33,12 @@ extension NavigatorRouteSettings on RouteSettings {
       final indexValue = arguments['index'];
       final index = indexValue is int ? indexValue : null;
       final isNestedValue = arguments['isNested'];
-      final isInitialRoute =
-          (isNestedValue != null && isNestedValue is bool) && !isNestedValue;
+      final isNested =
+          isNestedValue != null && isNestedValue is bool && isNestedValue;
       final params = arguments['params'];
       return RouteSettings(
-        name: '$url.$index',
-        isInitialRoute: isInitialRoute,
-        arguments: params,
+        name: '$index $url',
+        arguments: <String, dynamic>{'isNested': isNested, 'params': params},
       );
     }
     return null;
@@ -61,18 +60,30 @@ extension NavigatorRouteSettings on RouteSettings {
     params,
   }) =>
       RouteSettings(
-        name: '$url.$index',
-        isInitialRoute: !isNested,
-        arguments: params,
+        name: '$index $url',
+        arguments: <String, dynamic>{'isNested': isNested, 'params': params},
       );
 
-  String get url => (name?.isNotEmpty ?? false) && name.contains('.')
-      ? name.split('.').first
+  String get url => (name?.isNotEmpty ?? false) && name.contains(' ')
+      ? name.split(' ').last
       : '';
 
-  int get index => int.tryParse(name?.split('.')?.last) ?? 0;
+  int get index => int.tryParse(name?.split(' ')?.first) ?? 0;
 
-  bool get isNested => !isInitialRoute;
+  bool get isNested {
+    if (arguments != null && arguments is Map<String, dynamic>) {
+      // ignore: avoid_as
+      final isNestedValue = (arguments as Map<String, dynamic>)['isNested'];
+      return isNestedValue != null && isNestedValue is bool && isNestedValue;
+    }
+    return false;
+  }
 
-  dynamic get params => arguments;
+  dynamic get params {
+    if (arguments != null && arguments is Map<String, dynamic>) {
+      // ignore: avoid_as
+      return (arguments as Map<String, dynamic>)['params'];
+    }
+    return null;
+  }
 }

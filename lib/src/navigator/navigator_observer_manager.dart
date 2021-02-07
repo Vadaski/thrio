@@ -21,9 +21,10 @@
 
 import 'package:flutter/widgets.dart';
 
-import '../logger/thrio_logger.dart';
 import '../navigator/navigator_page_observer.dart';
 import '../registry/registry_set.dart';
+import 'navigator_home.dart';
+import 'navigator_logger.dart';
 import 'navigator_page_route.dart';
 import 'navigator_route_observer.dart';
 import 'navigator_route_settings.dart';
@@ -43,14 +44,19 @@ class NavigatorObserverManager extends NavigatorObserver {
 
   final _currentRemoveRoutes = <NavigatorPageRoute>[];
 
-  final pageRoutes = <NavigatorPageRoute>[];
+  final pageRoutes = <NavigatorPageRoute>[
+    NavigatorPageRoute(
+        builder: (settings) => const NavigatorHome(),
+        settings: const RouteSettings(name: '1 /'))
+  ];
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
     if (route is NavigatorPageRoute) {
-      ThrioLogger.v(
-        'didPush:${route.settings.name} '
-        'params:${route.settings.params}',
+      verbose(
+        'didPush: url->${route.settings.url} '
+        'index->${route.settings.index} '
+        'params->${route.settings.params}',
       );
       final lastRoute = pageRoutes.isNotEmpty ? pageRoutes.last : null;
       pageRoutes.add(route);
@@ -74,7 +80,7 @@ class NavigatorObserverManager extends NavigatorObserver {
       pageRoutes.remove(route);
       _currentPopRoutes.add(route);
       if (_currentPopRoutes.length == 1) {
-        Future.delayed(const Duration(milliseconds: 100), () {
+        Future(() {
           final previousRoute = pageRoutes.isEmpty ? null : pageRoutes.last;
           final pageObservers = Set.from(_pageObservers);
           final routeObservers = Set.from(_routeObservers);
@@ -85,9 +91,27 @@ class NavigatorObserverManager extends NavigatorObserver {
                 observer.didAppear(previousRoute.settings);
               }
             }
+            if (pageRoutes.last.routeAction == NavigatorRouteAction.popTo) {
+              verbose('didPopTo: url->${pageRoutes.last.settings.url} '
+                  'index->${pageRoutes.last.settings.index}');
+              final routeObservers = Set.from(_routeObservers);
+              for (final observer in routeObservers) {
+                observer.didPopTo(
+                  pageRoutes.last.settings,
+                  _currentPopRoutes.first.settings,
+                );
+              }
+              final pageObservers = Set.from(_pageObservers);
+              for (final observer in pageObservers) {
+                observer.didDisappear(_currentPopRoutes.first.settings);
+                observer.didAppear(pageRoutes.last.settings);
+              }
+              pageRoutes.last.routeAction = null;
+            }
             if (route.routeAction == NavigatorRouteAction.pop) {
-              ThrioLogger.v(
-                'didPop:${route.settings.name} '
+              verbose(
+                'didPop: url->${route.settings.url} '
+                'index->${route.settings.index} '
                 'params:${route.settings.params}',
               );
               for (final observer in routeObservers) {
@@ -97,9 +121,10 @@ class NavigatorObserverManager extends NavigatorObserver {
             if (route.routeAction == NavigatorRouteAction.remove) {
               if (WidgetsBinding.instance.lifecycleState ==
                   AppLifecycleState.resumed) {
-                ThrioLogger.v(
-                  'didRemove:${route.settings.name} '
-                  'params:${route.settings.params}',
+                verbose(
+                  'didRemove: url->${route.settings.url} '
+                  'index->${route.settings.index} '
+                  'params->${route.settings.params}',
                 );
                 for (final observer in routeObservers) {
                   observer.didRemove(
@@ -110,7 +135,8 @@ class NavigatorObserverManager extends NavigatorObserver {
               }
             }
           } else if (_currentPopRoutes.length > 1) {
-            ThrioLogger.v('didPopTo:${pageRoutes.last.settings.name}');
+            verbose('didPopTo: url->${pageRoutes.last.settings.url} '
+                'index->${pageRoutes.last.settings.index}');
             final routeObservers = Set.from(_routeObservers);
             for (final observer in routeObservers) {
               observer.didPopTo(
@@ -139,12 +165,31 @@ class NavigatorObserverManager extends NavigatorObserver {
       pageRoutes.remove(route);
       _currentRemoveRoutes.add(route);
       if (_currentRemoveRoutes.length == 1) {
-        Future.delayed(const Duration(milliseconds: 100), () {
+        Future(() {
           if (_currentRemoveRoutes.length == 1) {
-            ThrioLogger.v('didRemove:${route.settings.name}');
-            final routeObservers = Set.from(_routeObservers);
-            for (final observer in routeObservers) {
-              observer.didRemove(route.settings, prevRoute?.settings);
+            if (pageRoutes.last.routeAction == NavigatorRouteAction.popTo) {
+              verbose('didPopTo: url->${pageRoutes.last.settings.url} '
+                  'index->${pageRoutes.last.settings.index}');
+              final routeObservers = Set.from(_routeObservers);
+              for (final observer in routeObservers) {
+                observer.didPopTo(
+                  pageRoutes.last.settings,
+                  _currentRemoveRoutes.first.settings,
+                );
+              }
+              final pageObservers = Set.from(_pageObservers);
+              for (final observer in pageObservers) {
+                observer.didDisappear(_currentRemoveRoutes.first.settings);
+                observer.didAppear(pageRoutes.last.settings);
+              }
+              pageRoutes.last.routeAction = null;
+            } else {
+              verbose('didRemove: url->${route.settings.url} '
+                  'index->${route.settings.index}');
+              final routeObservers = Set.from(_routeObservers);
+              for (final observer in routeObservers) {
+                observer.didRemove(route.settings, prevRoute?.settings);
+              }
             }
 
             if (isLast) {
@@ -153,14 +198,15 @@ class NavigatorObserverManager extends NavigatorObserver {
                 final pageObservers = Set.from(_pageObservers);
                 for (final observer in pageObservers) {
                   observer.didDisappear(route.settings);
-                  if (previousRoute != null) {
+                  if (prevRoute != null) {
                     observer.didAppear(prevRoute.settings);
                   }
                 }
               }
             }
           } else if (_currentRemoveRoutes.length > 1) {
-            ThrioLogger.v('didPopTo:${pageRoutes.last.settings.name}');
+            verbose('didPopTo: url->${pageRoutes.last.settings.url} '
+                'index->${pageRoutes.last.settings.index}');
             final observers = Set.from(_routeObservers);
             // remove是最后一个route为之前的active route
             for (final observer in observers) {

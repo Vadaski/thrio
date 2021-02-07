@@ -8,7 +8,7 @@ void biz1() => runApp(const MainApp(entrypoint: 'biz1'));
 void biz2() => runApp(const MainApp(entrypoint: 'biz2'));
 
 class MainApp extends StatefulWidget {
-  const MainApp({Key key, String entrypoint = ''})
+  const MainApp({Key key, String entrypoint = 'main'})
       : _entrypoint = entrypoint,
         super(key: key);
 
@@ -33,14 +33,20 @@ class _MainAppState extends State<MainApp> with ThrioModule {
   }
 
   @override
-  void onPageRegister() {}
+  void onModuleInit() {
+    navigatorLogEnabled = true;
+  }
 
   @override
-  void onModuleInit() {}
-
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-        builder: ThrioNavigator.builder(entrypoint: widget._entrypoint),
-        home: NavigatorHome(),
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: NavigatorMaterialApp(
+          entrypoint: widget._entrypoint,
+          theme: ThemeData(
+            pageTransitionsTheme: const PageTransitionsTheme(builders: {
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            }),
+          ),
+        ),
       );
 }

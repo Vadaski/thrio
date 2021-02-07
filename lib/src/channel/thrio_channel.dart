@@ -24,6 +24,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../navigator/navigator_logger.dart';
 import '../registry/registry_map.dart';
 
 typedef MethodHandler = Future<dynamic> Function([
@@ -42,11 +43,12 @@ class ThrioChannel {
 
   final _methodHandlers = RegistryMap<String, MethodHandler>();
 
-  OptionalMethodChannel _methodChannel;
+  MethodChannel _methodChannel;
 
   EventChannel _eventChannel;
 
-  final _eventControllers = <String, Set<StreamController>>{};
+  final _eventControllers = <String, List<StreamController>>{};
+  final _eventNameControllers = <StreamController>{};
 
   Future<List<T>> invokeListMethod<T>(String method, [Map arguments]) {
     _setupMethodChannelIfNeeded();
@@ -81,14 +83,16 @@ class ThrioChannel {
   Stream<Map<String, dynamic>> onEventStream(String name) {
     _setupEventChannelIfNeeded();
     final controller = StreamController<Map<String, dynamic>>();
+    _eventNameControllers.add(controller);
     controller
       ..onListen = () {
-        _eventControllers[name] ??= <StreamController>{};
+        _eventControllers[name] ??= <StreamController>[];
         _eventControllers[name].add(controller);
       }
       ..onCancel = () {
         controller.close();
         _eventControllers[name].remove(controller);
+        _eventNameControllers.remove(controller);
       };
     return controller.stream;
   }
@@ -97,7 +101,7 @@ class ThrioChannel {
     if (_methodChannel != null) {
       return;
     }
-    _methodChannel = OptionalMethodChannel('_method_$_channel')
+    _methodChannel = MethodChannel('_method_$_channel')
       ..setMethodCallHandler((call) {
         final handler = _methodHandlers[call.method];
         final args = call.arguments;
@@ -119,6 +123,7 @@ class ThrioChannel {
               (data) => data is Map ? data.cast<String, dynamic>() : null)
           .where((data) => data?.containsKey(_kEventNameKey) ?? false)
           .listen((data) {
+        verbose('Notify on $_channel $data');
         final eventName = data.remove(_kEventNameKey);
         final controllers = _eventControllers[eventName];
         if (controllers?.isNotEmpty ?? false) {

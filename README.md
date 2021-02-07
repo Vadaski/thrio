@@ -1,10 +1,12 @@
-# ![thrio logo](./docs/imgs/thrio.png)
+# ![thrio logo](./doc/imgs/thrio.png)
 
-[![Gitter Channel][]][gitter badge]
+[![Gitter Channel][]][gitter badge] [![pub package](https://img.shields.io/pub/v/thrio.svg)](https://pub.dartlang.org/packages/thrio) [![license](https://img.shields.io/github/license/hellobike/thrio.svg?maxAge=2592000)](https://github.com/hellobike/thrio/LICENSE)
+
+[中文文档](./doc/Feature.md) [问题集](./doc/Questions.md) QQ 群号码：1014085473
 
 The `Navigator` for iOS, Android, Flutter.
 
-Version `0.1.0` requires Flutter `>= 1.12.0` and Dart `>= 2.6.0`.
+Version `0.2.2` requires Flutter `>= 1.12.0` and Dart `>= 2.6.0`.
 
 ## Features
 
@@ -14,6 +16,7 @@ Version `0.1.0` requires Flutter `>= 1.12.0` and Dart `>= 2.6.0`.
 - Register observers for the life cycle of pages
 - Register observers for the route actions of pages
 - Hide native navigation bar for flutter pages
+- Supports custom transition animation on the Flutter side
 
 ## Getting started
 
@@ -21,7 +24,7 @@ You should ensure that you add `thrio` as a dependency in your flutter project.
 
 ```yaml
 dependencies:
-  thrio: '^0.1.0'
+  thrio: '^0.5.0'
 ```
 
 You can also reference the git repo directly if you want:
@@ -38,21 +41,19 @@ You should then run `flutter pub upgrade` or update your packages in IntelliJ.
 
 There is a pretty sweet example project in the `example` folder. Check it out. Otherwise, keep reading to get up and running.
 
-[README CN](./docs/Feature.md)
-
 ### `push` a page in dart
 
 ```dart
 ThrioNavigator.push(url: 'flutter1');
 
-ThrioNavigator.push(url: 'native1', params: { '1': {'2': '3'}});
+ThrioNavigator.push(url: '/biz1/native1', params: { '1': {'2': '3'}});
 
-ThrioNavigator.push(url: 'native1', animated:true);
+ThrioNavigator.push(url: '/biz1/native1', animated:true);
 
 ThrioNavigator.push(
-    url: 'biz2/flutter2',
+    url: '/biz2/flutter2',
     params: {'1': {'2': '3'}},
-    poppedResult: (params) => ThrioLogger.v('biz2/flutter2 popped: $params'),
+    poppedResult: (params) => ThrioLogger.v('/biz2/flutter2 popped: $params'),
 );
 ```
 
@@ -61,19 +62,19 @@ ThrioNavigator.push(
 ```objc
 [ThrioNavigator pushUrl:@"flutter1"];
 
-[ThrioNavigator pushUrl:@"biz2/flutter2" poppedResult:^(id _Nonnull params) {
-    ThrioLogV(@"biz2/flutter2 popped: %@", params);
+[ThrioNavigator pushUrl:@"/biz2/flutter2" poppedResult:^(id _Nonnull params) {
+    ThrioLogV(@"/biz2/flutter2 popped: %@", params);
 }];
 ```
 
 ### `push` a page in Android
 
 ```kotlin
-ThrioNavigator.push(this, "biz1/flutter1",
+ThrioNavigator.push(this, "/biz1/flutter1",
         mapOf("k1" to 1),
         false,
         poppedResult = {
-            Log.e("Thrio", "native1 popResult call params $it")
+            Log.e("Thrio", "/biz1/native1 popResult call params $it")
         }
 )
 ```
@@ -182,8 +183,8 @@ NavigatorPageNotify(
 `UIViewController` implements the `NavigatorPageNotifyProtocol` and receives page notifications via `onNotify`
 
 ```objc
-- (void)onNotify:(NSString *)name params:(NSDictionary *)params {
-  ThrioLogV(@"native1 onNotify: %@, %@", name, params);
+- (void)onNotify:(NSString *)name params:(id)params {
+  ThrioLogV(@"/biz1/native1 onNotify: %@, %@", name, params);
 }
 ```
 

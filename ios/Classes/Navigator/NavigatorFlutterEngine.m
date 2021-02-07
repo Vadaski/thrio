@@ -20,9 +20,11 @@
 // IN THE SOFTWARE.
 
 #import "NavigatorFlutterEngine.h"
-#import "ThrioLogger.h"
+#import "NavigatorLogger.h"
 #import "ThrioNavigator.h"
+#import "ThrioNavigator+Internal.h"
 #import "NavigatorRouteObserverChannel.h"
+#import "NSPointerArray+Thrio.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -32,15 +34,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, nullable) ThrioChannel *channel;
 
-@property (nonatomic, strong, readwrite, nullable) NavigatorReceiveChannel *receiveChannel;
+@property (nonatomic, strong, readwrite, nullable) NavigatorRouteReceiveChannel *receiveChannel;
 
-@property (nonatomic, strong, readwrite, nullable) NavigatorSendChannel *sendChannel;
+@property (nonatomic, strong, readwrite, nullable) NavigatorRouteSendChannel *sendChannel;
 
 @property (nonatomic, strong) NavigatorRouteObserverChannel *routeObserverChannel;
 
 @property (nonatomic, strong, readwrite, nullable) NavigatorPageObserverChannel *pageObserverChannel;
 
-@property (nonatomic, strong) NSMutableArray *flutterViewControllers;
+@property (nonatomic, strong) NSPointerArray *flutterViewControllers;
 
 @end
 
@@ -48,98 +50,107 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)startupWithEntrypoint:(NSString *)entrypoint
                    readyBlock:(ThrioIdCallback _Nullable)block {
-  if (!_engine) {
-    _flutterViewControllers = [NSMutableArray array];
-    [self startupFlutterWithEntrypoint:entrypoint];
-    [self registerPlugins];
-    [self setupChannelWithEntrypoint:entrypoint readyBlock:block];
-  }
+    if (!_engine) {
+        _flutterViewControllers = [NSPointerArray weakObjectsPointerArray];
+        [self startupFlutterWithEntrypoint:entrypoint];
+        [self registerPlugins];
+        [self setupChannelWithEntrypoint:entrypoint readyBlock:block];
+    }
 }
 
 - (void)pushViewController:(NavigatorFlutterViewController *)viewController {
-  if (![_flutterViewControllers containsObject:viewController]) {
-    [_flutterViewControllers addObject:viewController];
-  }
-  ThrioLogV(@"NavigatorFlutterEngine: enter pushViewController");
-  if (_engine.viewController != viewController && viewController != nil) {
-    ThrioLogV(@"NavigatorFlutterEngine: set new %@", viewController);
-    _engine.viewController = viewController;
-    [(NavigatorFlutterViewController*)_engine.viewController surfaceUpdated:YES];
-  }
+    if (![_flutterViewControllers containsObject:viewController]) {
+        [_flutterViewControllers addObject:viewController];
+    }
+    NavigatorVerbose(@"NavigatorFlutterEngine: enter pushViewController");
+    if (viewController != nil && (_engine.viewController == nil || _engine.viewController != viewController)) {
+        NavigatorVerbose(@"NavigatorFlutterEngine: set new %@", viewController);
+        _engine.viewController = viewController;
+        [(NavigatorFlutterViewController *)_engine.viewController surfaceUpdated:YES];
+    }
 }
 
 - (NSUInteger)popViewController:(NavigatorFlutterViewController *)viewController {
-  [_flutterViewControllers removeObject:viewController];
-  ThrioLogV(@"NavigatorFlutterEngine: enter popViewController");
-  if (_engine.viewController == viewController && viewController != nil) {
-    ThrioLogV(@"NavigatorFlutterEngine: unset %@", viewController);
-    _engine.viewController = _flutterViewControllers.lastObject;
-    if (_engine.viewController) {
-      [(NavigatorFlutterViewController*)_engine.viewController surfaceUpdated:YES];
+    NavigatorVerbose(@"NavigatorFlutterEngine: enter popViewController");
+    if (viewController != nil && _engine.viewController == viewController) {
+        NavigatorVerbose(@"NavigatorFlutterEngine: unset %@", viewController);
+        if (_engine.viewController) {
+            [(NavigatorFlutterViewController *)_engine.viewController surfaceUpdated:NO];
+        }
+        NavigatorFlutterViewController *vc = _flutterViewControllers.last;
+        if (viewController == vc) {
+            [_flutterViewControllers removeLastObject:vc];
+        }
+        vc = _flutterViewControllers.last;
+        if (viewController != vc) {
+            _engine.viewController = vc;
+            if (_engine.viewController) {
+                [(NavigatorFlutterViewController *)_engine.viewController surfaceUpdated:YES];
+            }
+        }
     }
-  }
-  return _flutterViewControllers.count;
+    return _flutterViewControllers.count;
 }
 
 #pragma mark - private methods
 
 - (void)startupFlutterWithEntrypoint:(NSString *)entrypoint {
-  NSString *enginName = [NSString stringWithFormat:@"io.flutter.%lu", (unsigned long)self.hash];
-  _engine = [[FlutterEngine alloc] initWithName:enginName project:nil allowHeadlessExecution:YES];
-  BOOL result = NO;
-  if (ThrioNavigator.isMultiEngineEnabled) {
-    result =[_engine runWithEntrypoint:entrypoint];
-  } else {
-    result = [_engine run];
-  }
-  if (!result) {
-    @throw [NSException exceptionWithName:@"FlutterFailedException"
-                                   reason:@"run flutter engine failed!"
-                                 userInfo:nil];
-  }
+    NSString *enginName = [NSString stringWithFormat:@"io.flutter.%lu", (unsigned long)self.hash];
+    _engine = [[FlutterEngine alloc] initWithName:enginName project:nil allowHeadlessExecution:YES];
+    BOOL result = NO;
+    if (ThrioNavigator.isMultiEngineEnabled) {
+        result = [_engine runWithEntrypoint:entrypoint];
+    } else {
+        result = [_engine run];
+    }
+    if (!result) {
+        @throw [NSException exceptionWithName:@"FlutterFailedException"
+                                       reason:@"run flutter engine failed!"
+                                     userInfo:nil];
+    }
 }
 
 - (void)registerPlugins {
-  Class clazz = NSClassFromString(@"GeneratedPluginRegistrant");
-  if (clazz) {
-    if ([clazz respondsToSelector:NSSelectorFromString(@"registerWithRegistry:")]) {
+    Class clazz = NSClassFromString(@"GeneratedPluginRegistrant");
+    if (clazz) {
+        if ([clazz respondsToSelector:NSSelectorFromString(@"registerWithRegistry:")]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-      [clazz performSelector:NSSelectorFromString(@"registerWithRegistry:")
-                  withObject:_engine];
+            [clazz performSelector:NSSelectorFromString(@"registerWithRegistry:")
+                        withObject:_engine];
 #pragma clang diagnostic pop
+        }
     }
-  }
 }
 
 - (void)setupChannelWithEntrypoint:(NSString *)entrypoint
                         readyBlock:(ThrioIdCallback _Nullable)block {
-  _channel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_app__"];
-  
-  [_channel setupEventChannel:_engine.binaryMessenger];
-  [_channel setupMethodChannel:_engine.binaryMessenger];
+    _channel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_app__"];
 
-  _receiveChannel = [[NavigatorReceiveChannel alloc] initWithChannel:_channel];
-  [_receiveChannel setReadyBlock:block];
-  
-  _sendChannel = [[NavigatorSendChannel alloc] initWithChannel:_channel];
+    [_channel setupEventChannel:_engine.binaryMessenger];
+    [_channel setupMethodChannel:_engine.binaryMessenger];
 
-  ThrioChannel *routeChannel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_route_channel__"];
-  [routeChannel setupMethodChannel:_engine.binaryMessenger];
-  _routeObserverChannel = [[NavigatorRouteObserverChannel alloc] initWithChannel:routeChannel];
-  
-  ThrioChannel *pageChannel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_page_channel__"];
-  [pageChannel setupMethodChannel:_engine.binaryMessenger];
-  _pageObserverChannel = [[NavigatorPageObserverChannel alloc] initWithChannel:pageChannel];
+    _receiveChannel = [[NavigatorRouteReceiveChannel alloc] initWithChannel:_channel];
+    [_receiveChannel setReadyBlock:block];
+
+    _sendChannel = [[NavigatorRouteSendChannel alloc] initWithChannel:_channel];
+
+    ThrioChannel *routeChannel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_route_channel__"];
+    [routeChannel setupMethodChannel:_engine.binaryMessenger];
+    _routeObserverChannel = [[NavigatorRouteObserverChannel alloc] initWithChannel:routeChannel];
+
+    ThrioChannel *pageChannel = [ThrioChannel channelWithEntrypoint:entrypoint name:@"__thrio_page_channel__"];
+    [pageChannel setupMethodChannel:_engine.binaryMessenger];
+    _pageObserverChannel = [[NavigatorPageObserverChannel alloc] initWithChannel:pageChannel];
 }
 
 - (void)dealloc {
-  ThrioLogV(@"NavigatorFlutterEngine: dealloc %@", self);
-  if (_engine) {
-    _engine.viewController = nil;
-    [_engine destroyContext];
-    _engine = nil;
-  }
+    NavigatorVerbose(@"NavigatorFlutterEngine: dealloc %@", self);
+    if (_engine) {
+        _engine.viewController = nil;
+        [_engine destroyContext];
+        _engine = nil;
+    }
 }
 
 @end

@@ -74,19 +74,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-         params:(id)params
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+          params:(id)params
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 /// Push the page onto the navigation stack.
 ///
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-         params:(id)params
-         result:(ThrioNumberCallback)result
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+          params:(id)params
+          result:(ThrioNumberCallback)result
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 /// Push the page onto the navigation stack.
 ///
@@ -109,19 +109,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-       animated:(BOOL)animated
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+        animated:(BOOL)animated
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 /// Push the page onto the navigation stack.
 ///
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-       animated:(BOOL)animated
-         result:(ThrioNumberCallback)result
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+        animated:(BOOL)animated
+          result:(ThrioNumberCallback)result
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 /// Push the page onto the navigation stack.
 ///
@@ -147,21 +147,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-         params:(id)params
-       animated:(BOOL)animated
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+          params:(id)params
+        animated:(BOOL)animated
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 /// Push the page onto the navigation stack.
 ///
 /// If a native page builder exists for the url, open the native page,
 /// otherwise open the flutter page.
 ///
-+ (void)pushUrl:(NSString *)url
-         params:(id)params
-       animated:(BOOL)animated
-         result:(ThrioNumberCallback)result
-   poppedResult:(ThrioIdCallback)poppedResult;
++ (void) pushUrl:(NSString *)url
+          params:(id)params
+        animated:(BOOL)animated
+          result:(ThrioNumberCallback)result
+    poppedResult:(ThrioIdCallback)poppedResult;
 
 #pragma mark - notify methods
 
@@ -369,40 +369,26 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns the index of the page that was last pushed to the navigation
 /// stack.
 ///
-+ (NSNumber * _Nullable)lastIndex;
++ (NSNumber *_Nullable)lastIndex;
 
 /// Returns the index of the page that was last pushed to the navigation
 /// stack.
 ///
-+ (NSNumber * _Nullable)getLastIndexByUrl:(NSString *)url;
++ (NSNumber *_Nullable)getLastIndexByUrl:(NSString *)url;
 
 /// Returns all index of the page with `url` in the navigation stack.
 ///
 + (NSArray *)getAllIndexByUrl:(NSString *)url;
 
-#pragma mark - multi-engine methods
 
-/// Set multi-engine mode to `enabled`, default is NO.
-///
-/// Should be called before the engine is initialized.
-///
-+ (void)setMultiEngineEnabled:(BOOL)enabled;
+#pragma mark - engine methods
 
-/// Get multi-engine mode enabled or not.
+/// Get `FlutterEngine` instance by entrypoint.
 ///
-+ (BOOL)isMultiEngineEnabled;
+/// Should be called after the engine is initialized.
+///
++ (FlutterEngine *)getEngineByEntrypoint:(NSString *)entrypoint;
 
-/// Set the number of urls that the engine keeps alive in multi-engine mode.
-///
-/// The default value of `count` is 10.
-/// If `count` set to 0, no engines are kept alive.
-/// Should be called before the engine is initialized.
-///
-+ (void)setMultiEngineKeepAliveUrlCount:(NSUInteger)count;
-
-/// Get the number of urls that the engine keeps alive in multi-engine mode.
-///
-+ (NSUInteger)multiEngineKeepAliveUrlCount;
 
 @end
 

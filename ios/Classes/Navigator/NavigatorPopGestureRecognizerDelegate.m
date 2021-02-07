@@ -20,25 +20,28 @@
 // IN THE SOFTWARE.
 
 #import "NavigatorPopGestureRecognizerDelegate.h"
+#import "UINavigationController+Navigator.h"
 #import "UIViewController+WillPopCallback.h"
 
 @implementation NavigatorPopGestureRecognizerDelegate
 
 - (BOOL)gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)gestureRecognizer {
-  UIViewController *topViewController = self.navigationController.topViewController;
-  if (topViewController.thrio_willPopBlock) {
-    return NO;
-  }
-    
-  if (self.navigationController.viewControllers.count <= 1) {
-    return NO;
-  }
+    UIViewController *topViewController = self.navigationController.topViewController;
+    if (topViewController.thrio_willPopBlock) {
+        return NO;
+    }
 
-  if ([[self.navigationController valueForKey:@"_isTransitioning"] boolValue]) {
-    return NO;
-  }
-  
-  return YES;
+    if (self.navigationController.viewControllers.count <= 1) {
+        return NO;
+    }
+
+    if ([[self.navigationController valueForKey:@"_isTransitioning"] boolValue]) {
+        return NO;
+    }
+
+    self.navigationController.thrio_popingViewController = topViewController;
+
+    return YES;
 }
 
 @end
